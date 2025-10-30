@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Niveles de Ruido</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            margin: 0;
+            padding: 0;
+            text-align: center;
+        }
+
+        h1 {
+            color: #004477;
+            margin-top: 30px;
+        }
+
+        table {
+            margin: 30px auto;
+            border-collapse: collapse;
+            width: 70%;
+            background: white;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        th,
+        td {
+            padding: 12px;
+            border: 1px solid #ccc;
+        }
+
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>📊 Últimos niveles de ruido</h1>
+    <table>
+        <th>Fecha y hora</th>
+        <th>Nivel (dB)</th>
+        </tr>
+        {% for lectura in lecturas %}
+        </tr>
+        <td>{{ lectura.fecha_hora }}</td>
+        <td>{{ lectura.nivel_db }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="2">No hay lecturas registradas todavía.</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
