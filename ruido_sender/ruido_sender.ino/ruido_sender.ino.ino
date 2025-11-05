@@ -1,19 +1,22 @@
 #include <WiFiNINA.h>
 #include <ArduinoHttpClient.h>
 
-// 🔹 CONFIGURA TUS DATOS AQUÍ:
-const char* ssid = "iPhone de Manuel";
+// 🔹 CONFIGURA TU RED WiFi
+const char* ssid = "Redmi 9C NFC";
 const char* password = "12345678";
 
-// 🔹 IP del PC donde corre tu servidor Django:
-char serverAddress[] = "172.20.10.4";  // ⚠️ cámbiala por tu IP local
-int port = 8080;  // puerto del servidor Django
+// 🔹 IP y puerto del servidor Django
+char serverAddress[] = "192.168.20.157";   // ⚠️ Cámbiala si tu IP local cambia
+int port = 8000;  // el puerto del servidor Django (no 8080, por defecto Django usa 8000)
+
+// 🔹 API Key única de este dispositivo (por ejemplo, GB73 Piso 1)
+const char* API_KEY = "GB73_PISO1_KEY";
 
 // 🔹 Cliente WiFi + HTTP
 WiFiClient wifi;
 HttpClient client(wifi, serverAddress, port);
 
-// 🔹 Pin del sensor (A0 si tienes micrófono analógico)
+// 🔹 Pin del sensor (A0 si usas un micrófono analógico)
 int pinSensor = A0;
 
 void setup() {
@@ -23,6 +26,7 @@ void setup() {
   Serial.println("Conectando a WiFi...");
   WiFi.begin(ssid, password);
 
+  // Espera hasta conexión
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.print(".");
@@ -34,19 +38,19 @@ void setup() {
 }
 
 void loop() {
-  // 🔹 Simulamos o leemos un valor analógico de ruido
+  // 🔹 Leer el sensor o simular valor
   int valorAnalogico = analogRead(pinSensor);
-  float nivelRuido = map(valorAnalogico, 0, 1023, 30, 100); // de 30 a 100 dB simulados
+  float nivelRuido = map(valorAnalogico, 0, 1023, 30, 100);  // de 30 a 100 dB simulados
 
-  // Mostramos el valor en el monitor serie
+  // Mostrar valor en el monitor serie
   Serial.print("Nivel de ruido: ");
   Serial.print(nivelRuido);
   Serial.println(" dB");
 
-  // 🔹 Creamos el JSON que enviará al servidor
-  String json = "{\"nivel_db\": " + String(nivelRuido, 2) + "}";
+  // 🔹 Construir el JSON con api_key + nivel_db
+  String json = "{\"api_key\": \"" + String(API_KEY) + "\", \"nivel_db\": " + String(nivelRuido, 2) + "}";
 
-  // 🔹 Enviamos la petición POST al backend Django
+  // 🔹 Enviar la petición POST al servidor Django
   Serial.println("Enviando POST al servidor...");
   client.beginRequest();
   client.post("/api/ruido/");
@@ -56,7 +60,7 @@ void loop() {
   client.print(json);
   client.endRequest();
 
-  // 🔹 Recogemos respuesta
+  // 🔹 Recoger respuesta
   int statusCode = client.responseStatusCode();
   String response = client.responseBody();
 
@@ -65,6 +69,6 @@ void loop() {
   Serial.println("): ");
   Serial.println(response);
 
-  // Espera 5 segundos antes de la siguiente lectura
+  // 🔹 Esperar antes del siguiente envío
   delay(5000);
 }

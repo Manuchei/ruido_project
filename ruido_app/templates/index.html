@@ -1,10 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="es">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Niveles de Ruido</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -19,6 +21,45 @@
             margin-top: 30px;
         }
 
+        /* ======= RUIDO ACTUAL ======= */
+        #ruido-actual {
+            font-size: 2.5em;
+            margin-top: 10px;
+            color: #222;
+        }
+
+        #medidor-container {
+            width: 80%;
+            max-width: 600px;
+            height: 30px;
+            background-color: #ddd;
+            border-radius: 20px;
+            margin: 20px auto;
+            overflow: hidden;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #medidor-barra {
+            height: 100%;
+            width: 0%;
+            background-color: #2ecc71;
+            border-radius: 20px;
+            transition: width 1s ease, background-color 1s ease;
+        }
+
+        .nivel-verde {
+            color: #2ecc71;
+        }
+
+        .nivel-amarillo {
+            color: #f1c40f;
+        }
+
+        .nivel-rojo {
+            color: #e74c3c;
+        }
+
+        /* ======= TABLA ======= */
         table {
             margin: 30px auto;
             border-collapse: collapse;
@@ -41,19 +82,48 @@
         tr:nth-child(even) {
             background-color: #f9f9f9;
         }
+
+        tr.new-row {
+            background-color: #b8f5b8 !important;
+            transition: background-color 2s ease;
+        }
+
+        /* ======= GRÁFICA ======= */
+        #grafica-container {
+            width: 80%;
+            max-width: 900px;
+            margin: 40px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+
+        canvas {
+            width: 100% !important;
+            height: 400px !important;
+        }
     </style>
 </head>
 
 <body>
-    <h1>📊 Últimos niveles de ruido</h1>
-    <table>
-        <th>Fecha y hora</th>
-        <th>Nivel (dB)</th>
+    <h1>📊 Monitor de niveles de ruido</h1>
+    <h2 id="ruido-actual">🔊 Ruido actual: <span id="valor-ruido">--</span> dB</h2>
+
+    <!-- 🔋 Medidor visual -->
+    <div id="medidor-container">
+        <div id="medidor-barra"></div>
+    </div>
+
+    <table id="tabla-ruido">
+        <tr>
+            <th>Fecha y hora</th>
+            <th>Nivel (dB)</th>
         </tr>
         {% for lectura in lecturas %}
-        </tr>
-        <td>{{ lectura.fecha_hora }}</td>
-        <td>{{ lectura.nivel_db }}</td>
+        <tr>
+            <td>{{ lectura.fecha_hora }}</td>
+            <td>{{ lectura.nivel_db }} dB</td>
         </tr>
         {% empty %}
         <tr>
@@ -61,6 +131,96 @@
         </tr>
         {% endfor %}
     </table>
+
+    <div id="grafica-container">
+        <h2>📈 Evolución del ruido en tiempo real</h2>
+        <canvas id="graficaRuido"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('graficaRuido').getContext('2d');
+        const graficaRuido = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Nivel de ruido (dB)',
+                    data: [],
+                    borderColor: '#007BFF',
+                    backgroundColor: 'rgba(0, 123, 255, 0.2)',
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    x: { title: { display: true, text: 'Hora' } },
+                    y: { title: { display: true, text: 'Decibelios (dB)' }, beginAtZero: true }
+                }
+            }
+        });
+
+        let ultimaLectura = null;
+
+        setInterval(function () {
+            fetch(window.location.href, { cache: "no-store" })
+                .then(response => response.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newRows = doc.querySelectorAll('table tr');
+                    const table = document.getElementById('tabla-ruido');
+                    const valorRuido = document.getElementById('valor-ruido');
+                    const barra = document.getElementById('medidor-barra');
+
+                    // Actualiza tabla
+                    table.innerHTML = "";
+                    newRows.forEach(row => table.appendChild(row.cloneNode(true)));
+
+                    const filas = table.querySelectorAll('tr');
+                    if (filas.length > 1) {
+                        const primeraFila = filas[1];
+                        const nuevoValor = parseFloat(primeraFila.cells[1]?.textContent || 0);
+
+                        // ==== Actualiza valor actual ====
+                        valorRuido.textContent = nuevoValor.toFixed(1);
+
+                        // ==== Actualiza color y barra ====
+                        let color = "#2ecc71"; // verde
+                        if (nuevoValor >= 60 && nuevoValor < 80) color = "#f1c40f"; // amarillo
+                        if (nuevoValor >= 80) color = "#e74c3c"; // rojo
+
+                        valorRuido.style.color = color;
+                        barra.style.width = Math.min((nuevoValor / 100) * 100, 100) + "%";
+                        barra.style.backgroundColor = color;
+
+                        // ==== Fila nueva resaltada ====
+                        if (nuevoValor !== ultimaLectura && ultimaLectura !== null) {
+                            primeraFila.classList.add('new-row');
+                            setTimeout(() => primeraFila.classList.remove('new-row'), 2000);
+                        }
+                        ultimaLectura = nuevoValor;
+
+                        // ==== Actualiza gráfica ====
+                        const labels = [];
+                        const datos = [];
+                        filas.forEach(fila => {
+                            const celdas = fila.querySelectorAll('td');
+                            if (celdas.length === 2) {
+                                labels.push(celdas[0].textContent);
+                                datos.push(parseFloat(celdas[1].textContent));
+                            }
+                        });
+
+                        graficaRuido.data.labels = labels.slice(0, 15).reverse();
+                        graficaRuido.data.datasets[0].data = datos.slice(0, 15).reverse();
+                        graficaRuido.update();
+                    }
+                })
+                .catch(err => console.error('Error al recargar tabla:', err));
+        }, 5000);
+    </script>
 </body>
 
 </html>
