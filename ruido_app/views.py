@@ -8,22 +8,24 @@ from .models import LecturaRuido, Dispositivo, Edificio
 import json
 
 
-@login_required
-def home(request):
-    # Si es admin, muestra todos los edificios
-    if request.user.is_superuser:
-        lecturas = LecturaRuido.objects.order_by('-fecha_hora')[:50]
-    else:
-        # Si es usuario de edificio, solo sus dispositivos
-        edificio = getattr(request.user, 'edificio', None)
-        if not edificio:
-            lecturas = []
-        else:
-            lecturas = LecturaRuido.objects.filter(
-                dispositivo__edificio=edificio
-            ).order_by('-fecha_hora')[:50]
+from django.contrib.auth.decorators import login_required
 
-    return render(request, 'index.html', {'lecturas': lecturas})
+@login_required
+def ver_dispositivo(request, dispositivo_id):
+    dispositivo = Dispositivo.objects.get(id=dispositivo_id)
+
+    # Evitar que un usuario acceda a dispositivos de otro edificio
+    if dispositivo.edificio != request.user.edificio and not request.user.is_superuser:
+        return render(request, "error.html", {"mensaje": "No tienes acceso a este dispositivo"})
+
+    lecturas = dispositivo.lecturas.order_by('-fecha_hora')[:50]
+
+    return render(request, 'index.html', {
+        'lecturas': lecturas,
+        'dispositivo': dispositivo
+    })
+
+
 
 
 @csrf_exempt
@@ -55,3 +57,16 @@ def recibir_ruido(request):
         return JsonResponse({'status': 'ok', 'message': 'API activa. Usa POST para enviar datos.'})
     else:
         return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
+    
+@login_required
+def seleccionar_dispositivo(request):
+    edificio = getattr(request.user, 'edificio', None)
+
+    if not edificio:
+        dispositivos = []
+    else:
+        dispositivos = edificio.dispositivos.all()
+
+    return render(request, "seleccionar_dispositivo.html", {
+        "dispositivos": dispositivos
+    })

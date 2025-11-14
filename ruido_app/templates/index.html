@@ -107,6 +107,14 @@
 </head>
 
 <body>
+<form action="{% url 'logout' %}" method="post" style="position:absolute; top:20px; right:20px;">
+    {% csrf_token %}
+    <button type="submit" style="border:none; background:none; color:#007BFF; cursor:pointer; text-decoration:underline;">
+        Cerrar sesión
+    </button>
+</form>
+
+    </a>
     <h1>📊 Monitor de niveles de ruido</h1>
     <h2 id="ruido-actual">🔊 Ruido actual: <span id="valor-ruido">--</span> dB</h2>
 
@@ -161,8 +169,6 @@
             }
         });
 
-        let ultimaLectura = null;
-
         setInterval(function () {
             fetch(window.location.href, { cache: "no-store" })
                 .then(response => response.text())
@@ -195,12 +201,9 @@
                         barra.style.width = Math.min((nuevoValor / 100) * 100, 100) + "%";
                         barra.style.backgroundColor = color;
 
-                        // ==== Fila nueva resaltada ====
-                        if (nuevoValor !== ultimaLectura && ultimaLectura !== null) {
-                            primeraFila.classList.add('new-row');
-                            setTimeout(() => primeraFila.classList.remove('new-row'), 2000);
-                        }
-                        ultimaLectura = nuevoValor;
+                        // 🔥 ==== Fila nueva resaltada SIEMPRE ====
+                        primeraFila.classList.add('new-row');
+                        setTimeout(() => primeraFila.classList.remove('new-row'), 2000);
 
                         // ==== Actualiza gráfica ====
                         const labels = [];
