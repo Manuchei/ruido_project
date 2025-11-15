@@ -1,41 +1,13 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <title>Seleccionar dispositivo</title>
-    <style>
-        body { font-family: Arial; text-align: center; padding: 40px; }
-        .card {
-            display: inline-block;
-            background: #fff;
-            border: 2px solid #007BFF;
-            border-radius: 10px;
-            padding: 20px;
-            margin: 15px;
-            width: 250px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-        .card:hover {
-            background: #007BFF;
-            color: white;
-        }
-    </style>
-</head>
-<body>
+<h2>Selecciona un dispositivo</h2>
 
-<h1>Selecciona un dispositivo</h1>
-
-{% for d in dispositivos %}
-    <a href="/dispositivo/{{ d.id }}/">
-        <div class="card">
-            <h3>{{ d.nombre }}</h3>
-            <p>{{ d.ubicacion }}</p>
-        </div>
-    </a>
-{% empty %}
-    <p>No tienes dispositivos asignados.</p>
-{% endfor %}
-
-</body>
-</html>
+<ul>
+    {% for d in dispositivos %}
+        <li>
+            <a href="{% url 'ver_dispositivo' d.id %}">
+                {{ d.nombre }} - {{ d.ubicacion }}
+            </a>
+        </li>
+    {% empty %}
+        <li>No hay dispositivos asociados a este edificio.</li>
+    {% endfor %}
+</ul>

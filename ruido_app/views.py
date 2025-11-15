@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -8,26 +8,66 @@ from .models import LecturaRuido, Dispositivo, Edificio
 import json
 
 
-from django.contrib.auth.decorators import login_required
-
+# ----------------------------
+#   PÁGINA PRINCIPAL (después del login)
+# ----------------------------
 @login_required
-def ver_dispositivo(request, dispositivo_id):
-    dispositivo = Dispositivo.objects.get(id=dispositivo_id)
+def home(request):
+    # Si es admin → ver TODO
+    if request.user.is_superuser:
+        lecturas = LecturaRuido.objects.order_by('-fecha_hora')[:50]
 
-    # Evitar que un usuario acceda a dispositivos de otro edificio
-    if dispositivo.edificio != request.user.edificio and not request.user.is_superuser:
-        return render(request, "error.html", {"mensaje": "No tienes acceso a este dispositivo"})
+    else:
+        # Si es usuario de un edificio → solo sus dispositivos
+        edificio = getattr(request.user, 'edificio', None)
 
-    lecturas = dispositivo.lecturas.order_by('-fecha_hora')[:50]
+        if not edificio:
+            lecturas = []
+        else:
+            lecturas = LecturaRuido.objects.filter(
+                dispositivo__edificio=edificio
+            ).order_by('-fecha_hora')[:50]
 
-    return render(request, 'index.html', {
-        'lecturas': lecturas,
-        'dispositivo': dispositivo
+    return render(request, 'index.html', {'lecturas': lecturas})
+
+
+# ----------------------------
+#   SELECCIONAR DISPOSITIVO
+# ----------------------------
+@login_required
+def seleccionar_edificio(request):
+    edificios = Edificio.objects.all()
+
+    if request.method == "POST":
+        edificio_id = request.POST.get("edificio_id")
+
+        if edificio_id:
+            request.session["edificio_id"] = edificio_id
+            return redirect("seleccionar_dispositivo")
+
+    return render(request, "seleccionar_edifico.html", {
+        "edificios": edificios
+    })
+    
+@login_required
+def seleccionar_dispositivo(request):
+    edificio_id = request.session.get("edificio_id")
+
+    if not edificio_id:
+        return redirect("seleccionar_edificio")
+
+    edificio = Edificio.objects.get(id=edificio_id)
+
+    dispositivos = edificio.dispositivos.all()
+
+    return render(request, "seleccionar_dispositivo.html", {
+        "dispositivos": dispositivos
     })
 
 
-
-
+# ----------------------------
+#   API POST de dispositivos
+# ----------------------------
 @csrf_exempt
 def recibir_ruido(request):
     if request.method == 'POST':
@@ -55,18 +95,26 @@ def recibir_ruido(request):
 
     elif request.method == 'GET':
         return JsonResponse({'status': 'ok', 'message': 'API activa. Usa POST para enviar datos.'})
-    else:
-        return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
-    
+
+    return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
+
 @login_required
-def seleccionar_dispositivo(request):
-    edificio = getattr(request.user, 'edificio', None)
+def ver_dispositivo(request, id):
+    # Obtener el dispositivo
+    dispositivo = Dispositivo.objects.filter(id=id).first()
+    if not dispositivo:
+        return render(request, "error.html", {"mensaje": "El dispositivo no existe"})
 
-    if not edificio:
-        dispositivos = []
-    else:
-        dispositivos = edificio.dispositivos.all()
+    # Evitar que un usuario acceda a dispositivos de otro edificio
+    if not request.user.is_superuser:
+        edificio = getattr(request.user, 'edificio', None)
+        if not edificio or dispositivo.edificio != edificio:
+            return render(request, "error.html", {"mensaje": "No tienes permiso para ver este dispositivo"})
 
-    return render(request, "seleccionar_dispositivo.html", {
-        "dispositivos": dispositivos
+    # Últimas 50 lecturas
+    lecturas = dispositivo.lecturas.order_by('-fecha_hora')[:50]
+
+    return render(request, "index.html", {
+        "dispositivo": dispositivo,
+        "lecturas": lecturas
     })
