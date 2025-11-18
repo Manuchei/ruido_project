@@ -5,16 +5,32 @@ from django.contrib.auth.models import User
 class Edificio(models.Model):
     nombre = models.CharField(max_length=100, unique=True)
     direccion = models.CharField(max_length=200)
-    usuario = models.OneToOneField(User, on_delete=models.CASCADE, related_name='edificio')
 
     def __str__(self):
         return self.nombre
 
 
+# ✔ Cada usuario pertenece a UN edificio (relación muchos a uno)
+User.add_to_class(
+    'edificio',
+    models.ForeignKey(
+        Edificio,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="usuarios"
+    )
+)
+
+
 class Dispositivo(models.Model):
     nombre = models.CharField(max_length=50)
     ubicacion = models.CharField(max_length=100)
-    edificio = models.ForeignKey(Edificio, on_delete=models.CASCADE, related_name='dispositivos')
+    edificio = models.ForeignKey(
+        Edificio,
+        on_delete=models.CASCADE,
+        related_name='dispositivos'
+    )
     api_key = models.CharField(max_length=64, unique=True)
 
     def __str__(self):
@@ -23,10 +39,10 @@ class Dispositivo(models.Model):
 
 class LecturaRuido(models.Model):
     dispositivo = models.ForeignKey(
-        'Dispositivo', 
+        'Dispositivo',
         on_delete=models.CASCADE,
-        null=True, 
-        blank=True,  # 🔹 Esto permite dejarlo vacío temporalmente
+        null=True,
+        blank=True,
         related_name='lecturas'
     )
     nivel_db = models.FloatField()

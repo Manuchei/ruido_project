@@ -1,13 +1,19 @@
-<h2>Selecciona un dispositivo</h2>
+{% extends "base.html" %}
+{% block title %}Seleccionar dispositivo{% endblock %}
 
-<ul>
-    {% for d in dispositivos %}
-        <li>
-            <a href="{% url 'ver_dispositivo' d.id %}">
-                {{ d.nombre }} - {{ d.ubicacion }}
+{% block content %}
+<div class="card shadow-sm p-4">
+    <h3 class="mb-3">Selecciona un dispositivo</h3>
+
+    <ul class="list-group">
+        {% for d in dispositivos %}
+            <a href="{% url 'ver_dispositivo' d.id %}" 
+               class="list-group-item list-group-item-action">
+               <strong>{{ d.nombre }}</strong> — {{ d.ubicacion }}
             </a>
-        </li>
-    {% empty %}
-        <li>No hay dispositivos asociados a este edificio.</li>
-    {% endfor %}
-</ul>
+        {% empty %}
+            <li class="list-group-item text-muted">No hay dispositivos en este edificio.</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endblock %}

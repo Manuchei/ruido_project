@@ -36,18 +36,37 @@ def home(request):
 # ----------------------------
 @login_required
 def seleccionar_edificio(request):
-    edificios = Edificio.objects.all()
+
+    # 🟦 ADMIN → puede ver todo
+    if request.user.is_superuser:
+        edificios = Edificio.objects.all()
+
+    # 🟩 USUARIO NORMAL → solo su edificio
+    else:
+        edificio_user = getattr(request.user, "edificio", None)
+        if edificio_user:
+            edificios = [edificio_user]  # lista con 1 edificio
+        else:
+            edificios = []  # por si algún usuario no tiene edificio
 
     if request.method == "POST":
         edificio_id = request.POST.get("edificio_id")
 
-        if edificio_id:
-            request.session["edificio_id"] = edificio_id
-            return redirect("seleccionar_dispositivo")
+        # 🚫 Seguridad: usuario normal NO puede elegir otro edificio
+        if not request.user.is_superuser:
+            if str(request.user.edificio.id) != edificio_id:
+                return render(request, "error.html", {
+                    "mensaje": "No tienes permiso para seleccionar este edificio."
+                })
+
+        request.session["edificio_id"] = edificio_id
+        return redirect("seleccionar_dispositivo")
 
     return render(request, "seleccionar_edifico.html", {
         "edificios": edificios
     })
+
+
     
 @login_required
 def seleccionar_dispositivo(request):
@@ -57,6 +76,13 @@ def seleccionar_dispositivo(request):
         return redirect("seleccionar_edificio")
 
     edificio = Edificio.objects.get(id=edificio_id)
+
+    # ✔ USUARIO NORMAL: prohibir acceder a edificios que no son suyos
+    if not request.user.is_superuser:
+        if edificio != request.user.edificio:
+            return render(request, "error.html", {
+                "mensaje": "No tienes permiso para acceder a este edificio."
+            })
 
     dispositivos = edificio.dispositivos.all()
 
@@ -100,18 +126,16 @@ def recibir_ruido(request):
 
 @login_required
 def ver_dispositivo(request, id):
-    # Obtener el dispositivo
+
     dispositivo = Dispositivo.objects.filter(id=id).first()
     if not dispositivo:
         return render(request, "error.html", {"mensaje": "El dispositivo no existe"})
 
-    # Evitar que un usuario acceda a dispositivos de otro edificio
+    # ✔ USUARIO NORMAL: solo su edificio
     if not request.user.is_superuser:
-        edificio = getattr(request.user, 'edificio', None)
-        if not edificio or dispositivo.edificio != edificio:
+        if dispositivo.edificio != request.user.edificio:
             return render(request, "error.html", {"mensaje": "No tienes permiso para ver este dispositivo"})
 
-    # Últimas 50 lecturas
     lecturas = dispositivo.lecturas.order_by('-fecha_hora')[:50]
 
     return render(request, "index.html", {
