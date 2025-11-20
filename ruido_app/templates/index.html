@@ -1,57 +1,50 @@
-{% extends "base.html" %}
+<table class="table table-hover table-striped align-middle mb-0">
+    <thead class="table-light">
+        <tr>
+            <th class="px-4 py-3">Fecha</th>
+            <th class="px-4 py-3 text-center">Nivel (dB)</th>
+            <th class="px-4 py-3 text-center">Presencia</th>  <!-- 🔹 NUEVA COLUMNA -->
+        </tr>
+    </thead>
 
-{% block content %}
+    <tbody>
+        {% for lectura in lecturas %}
+        <tr>
+            <td class="px-4">{{ lectura.fecha_hora|date:"d/m/Y H:i:s" }}</td>
 
-<div class="container mt-5 mb-5">
-    <div class="card shadow-lg rounded-4 border-0">
-        
-        <div class="card-header bg-primary text-white py-3 rounded-top-4">
-            <h4 class="mb-0">
-                📊 Lecturas recientes — {{ dispositivo.nombre }}
-            </h4>
-        </div>
+            <td class="text-center fw-bold">
+                {% if lectura.nivel_db < 60 %}
+                    <span class="badge rounded-pill bg-success">
+                        {{ lectura.nivel_db }} dB
+                    </span>
+                {% elif lectura.nivel_db < 80 %}
+                    <span class="badge rounded-pill bg-warning text-dark">
+                        {{ lectura.nivel_db }} dB
+                    </span>
+                {% elif lectura.nivel_db < 100 %}
+                    <span class="badge rounded-pill text-white" style="background-color:#fd7e14;">
+                        {{ lectura.nivel_db }} dB
+                    </span>
+                {% else %}
+                    <span class="badge rounded-pill bg-danger">
+                        {{ lectura.nivel_db }} dB
+                    </span>
+                {% endif %}
+            </td>
 
-        <div class="card-body p-0">
-
-            <table class="table table-hover table-striped align-middle mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th class="px-4 py-3">Fecha</th>
-                        <th class="px-4 py-3 text-center">Nivel (dB)</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-                    {% for lectura in lecturas %}
-                    <tr>
-                        <td class="px-4">{{ lectura.fecha_hora|date:"d/m/Y H:i:s" }}</td>
-<td class="text-center fw-bold">
-    {% if lectura.nivel_db < 60 %}
-        <span class="badge rounded-pill bg-success">
-            {{ lectura.nivel_db }} dB
-        </span>
-    {% elif lectura.nivel_db < 80 %}
-        <span class="badge rounded-pill bg-warning text-dark">
-            {{ lectura.nivel_db }} dB
-        </span>
-    {% elif lectura.nivel_db < 100 %}
-        <span class="badge rounded-pill text-white" style="background-color:#fd7e14;">
-            {{ lectura.nivel_db }} dB
-        </span>
-    {% else %}
-        <span class="badge rounded-pill bg-danger">
-            {{ lectura.nivel_db }} dB
-        </span>
-    {% endif %}
-</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-
-        </div>
-
-    </div>
-</div>
-
-{% endblock %}
+            <!-- 🔹 PRESENCIA -->
+            <td class="text-center">
+                {% if lectura.presencia %}
+                    <span class="badge rounded-pill bg-primary">
+                        👤 Presente
+                    </span>
+                {% else %}
+                    <span class="badge rounded-pill bg-secondary">
+                        🚫 Sin presencia
+                    </span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>

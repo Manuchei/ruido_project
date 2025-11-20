@@ -102,13 +102,22 @@ def recibir_ruido(request):
             nivel = float(data.get('nivel_db'))
             api_key = data.get('api_key')
 
+            # 🔹 NUEVO: leer presencia (0/1, true/false, o nada)
+            presencia_raw = data.get('presencia', 0)
+            # Aseguramos que se convierta bien a booleano
+            presencia = bool(int(presencia_raw)) if isinstance(presencia_raw, (int, str)) else bool(presencia_raw)
+
             # Buscar dispositivo por api_key
             dispositivo = Dispositivo.objects.filter(api_key=api_key).first()
             if not dispositivo:
                 return JsonResponse({'status': 'error', 'message': 'Dispositivo no encontrado'}, status=400)
 
             # Crear lectura
-            LecturaRuido.objects.create(dispositivo=dispositivo, nivel_db=nivel)
+            LecturaRuido.objects.create(
+                dispositivo=dispositivo,
+                nivel_db=nivel,
+                presencia=presencia  # 🔹 GUARDAMOS PRESENCIA
+            )
 
             # Limpieza automática (24h)
             limite = timezone.now() - timedelta(hours=24)
@@ -123,6 +132,7 @@ def recibir_ruido(request):
         return JsonResponse({'status': 'ok', 'message': 'API activa. Usa POST para enviar datos.'})
 
     return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
+
 
 @login_required
 def ver_dispositivo(request, id):

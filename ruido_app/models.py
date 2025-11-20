@@ -46,6 +46,7 @@ class LecturaRuido(models.Model):
         related_name='lecturas'
     )
     nivel_db = models.FloatField()
+    presencia = models.BooleanField(default=False)  # 🔹 NUEVO CAMPO
     fecha_hora = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
