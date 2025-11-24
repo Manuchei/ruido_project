@@ -1,50 +1,177 @@
-<table class="table table-hover table-striped align-middle mb-0">
-    <thead class="table-light">
-        <tr>
-            <th class="px-4 py-3">Fecha</th>
-            <th class="px-4 py-3 text-center">Nivel (dB)</th>
-            <th class="px-4 py-3 text-center">Presencia</th>  <!-- 🔹 NUEVA COLUMNA -->
-        </tr>
-    </thead>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
 
-    <tbody>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+
+  <title>Panel de Medición de Ruido</title>
+
+  <style>
+    body {
+      background-color: #f8f9fa;
+      font-family: "Segoe UI", Arial, sans-serif;
+    }
+
+    .navbar {
+      background-color: #1e293b;
+    }
+
+    .navbar-brand {
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+
+    .panel {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+
+    .metric-card {
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 20px;
+      height: 100%;
+    }
+
+    .metric-title {
+      font-size: 0.9rem;
+      color: #6c757d;
+    }
+
+    .metric-value {
+      font-size: 1.8rem;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .estado-normal { color: #198754; }
+    .estado-medio { color: #fd7e14; }
+    .estado-alto { color: #dc3545; }
+
+  </style>
+</head>
+<body>
+
+<!-- Barra superior -->
+<nav class="navbar navbar-dark px-4">
+  <span class="navbar-brand mb-0 h5">Sistema de Monitorización Acústica</span>
+</nav>
+
+<div class="container py-4">
+
+  <!-- Título -->
+  <div class="mb-4">
+    <h4>Dispositivo {{ dispositivo_id|default:"1" }}</h4>
+    <p class="text-muted mb-0">Historial de niveles sonoros registrados</p>
+  </div>
+
+  <!-- Métricas resumen -->
+  <div class="row g-3 mb-4">
+
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-title">Último nivel registrado</div>
+        <div class="metric-value estado-normal">52 dB</div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-title">Estado presencia</div>
+        <div class="metric-value">Presente</div>
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <div class="metric-card">
+        <div class="metric-title">Última actualización</div>
+        <div class="metric-value fs-6">24/11/2025 16:25</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Panel principal -->
+  <div class="panel">
+
+    <h5 class="mb-3">Registro de lecturas</h5>
+
+    <table class="table table-bordered table-striped align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha y hora</th>
+          <th class="text-center">Nivel (dB)</th>
+          <th class="text-center">Presencia</th>
+        </tr>
+      </thead>
+
+      <tbody>
+
+      {% if lecturas %}
         {% for lectura in lecturas %}
         <tr>
-            <td class="px-4">{{ lectura.fecha_hora|date:"d/m/Y H:i:s" }}</td>
+          <td>{{ lectura.fecha_hora|date:"d/m/Y H:i:s" }}</td>
 
-            <td class="text-center fw-bold">
-                {% if lectura.nivel_db < 60 %}
-                    <span class="badge rounded-pill bg-success">
-                        {{ lectura.nivel_db }} dB
-                    </span>
-                {% elif lectura.nivel_db < 80 %}
-                    <span class="badge rounded-pill bg-warning text-dark">
-                        {{ lectura.nivel_db }} dB
-                    </span>
-                {% elif lectura.nivel_db < 100 %}
-                    <span class="badge rounded-pill text-white" style="background-color:#fd7e14;">
-                        {{ lectura.nivel_db }} dB
-                    </span>
-                {% else %}
-                    <span class="badge rounded-pill bg-danger">
-                        {{ lectura.nivel_db }} dB
-                    </span>
-                {% endif %}
-            </td>
+          <td class="text-center fw-semibold">
+            {% if lectura.nivel_db < 60 %}
+              <span class="estado-normal">{{ lectura.nivel_db }} dB</span>
+            {% elif lectura.nivel_db < 80 %}
+              <span class="estado-medio">{{ lectura.nivel_db }} dB</span>
+            {% else %}
+              <span class="estado-alto">{{ lectura.nivel_db }} dB</span>
+            {% endif %}
+          </td>
 
-            <!-- 🔹 PRESENCIA -->
-            <td class="text-center">
-                {% if lectura.presencia %}
-                    <span class="badge rounded-pill bg-primary">
-                        👤 Presente
-                    </span>
-                {% else %}
-                    <span class="badge rounded-pill bg-secondary">
-                        🚫 Sin presencia
-                    </span>
-                {% endif %}
-            </td>
+          <td class="text-center">
+            {% if lectura.presencia %}
+              <span class="text-success">Presente</span>
+            {% else %}
+              <span class="text-secondary">Sin presencia</span>
+            {% endif %}
+          </td>
         </tr>
         {% endfor %}
-    </tbody>
-</table>
+
+      {% else %}
+
+        <!-- Datos simulados -->
+        <tr>
+          <td>24/11/2025 16:21:03</td>
+          <td class="text-center estado-normal fw-semibold">52 dB</td>
+          <td class="text-center text-success">Presente</td>
+        </tr>
+
+        <tr>
+          <td>24/11/2025 16:22:30</td>
+          <td class="text-center estado-medio fw-semibold">71 dB</td>
+          <td class="text-center text-secondary">Sin presencia</td>
+        </tr>
+
+        <tr>
+          <td>24/11/2025 16:24:10</td>
+          <td class="text-center estado-medio fw-semibold">89 dB</td>
+          <td class="text-center text-success">Presente</td>
+        </tr>
+
+        <tr>
+          <td>24/11/2025 16:25:55</td>
+          <td class="text-center estado-alto fw-semibold">102 dB</td>
+          <td class="text-center text-secondary">Sin presencia</td>
+        </tr>
+
+      {% endif %}
+
+      </tbody>
+    </table>
+
+  </div>
+</div>
+
+</body>
+</html>

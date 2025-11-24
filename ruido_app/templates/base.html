@@ -3,44 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema de Ruido{% endblock %}</title>
 
-    <!-- Bootstrap CSS -->
-    <link 
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" 
-        rel="stylesheet">
+    <title>{% block title %}AG Noise App{% endblock %}</title>
 
-    <!-- Estilos propios -->
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
     <style>
         body {
             background-color: #f5f7fa;
+            font-family: "Segoe UI", Arial, sans-serif;
         }
+
+        .navbar {
+            background-color: #1e293b !important;
+        }
+
         .navbar-brand {
-            font-weight: bold;
+            font-weight: 600;
             letter-spacing: 0.5px;
         }
+
+        .nav-link {
+            color: #d1d5db !important;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+        }
+
+        .main-container {
+            padding-top: 30px;
+        }
+
         .card {
-            border-radius: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+
+        .user-badge {
+            background: rgba(255,255,255,0.1);
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 0.9rem;
         }
     </style>
+
 </head>
 <body>
 
 {% if request.path != '/login/' %}
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary px-3">
-    <a class="navbar-brand" href="/">AG NOISE APP</a>
 
-    <div class="ms-auto d-flex align-items-center">
+<nav class="navbar navbar-expand-lg navbar-dark px-3">
+  <div class="container-fluid">
+
+    <!-- Logo / Nombre -->
+    <a class="navbar-brand" href="/">
+        AG NOISE APP
+    </a>
+
+    <!-- Botón móvil -->
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <!-- Contenido colapsable -->
+    <div class="collapse navbar-collapse" id="navbarContent">
+
+        <!-- Menú izquierdo -->
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/dispositivo/1/">Dispositivo</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Historial</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Configuración</a>
+          </li>
+        </ul>
+
+        <!-- Usuario a la derecha -->
         {% if user.is_authenticated %}
-            <span class="text-white me-3">{{ user.username }}</span>
-            <a href="{% url 'login' %}" class="btn btn-outline-light btn-sm">Cerrar sesión</a>
+        <div class="d-flex align-items-center gap-3">
+            <div class="text-white user-badge">
+                {{ user.username }}
+            </div>
+
+            <a href="{% url 'logout' %}" class="btn btn-outline-light btn-sm">
+                Cerrar sesión
+            </a>
+        </div>
         {% endif %}
     </div>
+  </div>
 </nav>
+
 {% endif %}
 
-
-<div class="container">
+<!-- Contenido principal -->
+<div class="container main-container">
     {% block content %}
     {% endblock %}
 </div>
