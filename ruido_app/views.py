@@ -96,43 +96,72 @@ def seleccionar_dispositivo(request):
 # ----------------------------
 @csrf_exempt
 def recibir_ruido(request):
-    if request.method == 'POST':
+    if request.method == "POST":
         try:
-            data = json.loads(request.body.decode('utf-8'))
-            nivel = float(data.get('nivel_db'))
-            api_key = data.get('api_key')
+            data = json.loads(request.body.decode("utf-8"))
 
-            # 🔹 NUEVO: leer presencia (0/1, true/false, o nada)
-            presencia_raw = data.get('presencia', 0)
-            # Aseguramos que se convierta bien a booleano
+            # Datos que envía Arduino
+            nivel = float(data.get("nivel_db"))
+            api_key = data.get("api_key")
+            rms = data.get("rms", None)
+
+            presencia_raw = data.get("presencia", 0)
             presencia = bool(int(presencia_raw)) if isinstance(presencia_raw, (int, str)) else bool(presencia_raw)
 
-            # Buscar dispositivo por api_key
+            # Buscar dispositivo por API key
             dispositivo = Dispositivo.objects.filter(api_key=api_key).first()
             if not dispositivo:
-                return JsonResponse({'status': 'error', 'message': 'Dispositivo no encontrado'}, status=400)
+                return JsonResponse({
+                    "status": "error",
+                    "mensaje": "Dispositivo no encontrado"
+                }, status=400)
 
-            # Crear lectura
+            # Guardar lectura
             LecturaRuido.objects.create(
                 dispositivo=dispositivo,
                 nivel_db=nivel,
-                presencia=presencia  # 🔹 GUARDAMOS PRESENCIA
+                presencia=presencia
+                # Si tienes rms en modelo → añade: rms=rms
             )
 
-            # Limpieza automática (24h)
+            # Limpieza automática 24h
             limite = timezone.now() - timedelta(hours=24)
             LecturaRuido.objects.filter(fecha_hora__lt=limite).delete()
 
-            return JsonResponse({'status': 'ok', 'dispositivo': dispositivo.nombre})
+            return JsonResponse({
+                "status": "ok",
+                "dispositivo": dispositivo.nombre,
+                "nivel_db": nivel,
+                "rms": rms,
+                "presencia": presencia
+            })
 
         except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
+            return JsonResponse({
+                "status": "error",
+                "mensaje": str(e)
+            })
 
-    elif request.method == 'GET':
-        return JsonResponse({'status': 'ok', 'message': 'API activa. Usa POST para enviar datos.'})
+    # 🔵 Modo navegador GET
+    elif request.method == "GET":
+        ultima = LecturaRuido.objects.last()
 
-    return JsonResponse({'status': 'error', 'message': 'Método no permitido'})
+        if ultima:
+            return JsonResponse({
+                "status": "ok",
+                "ultimo_ruido": {
+                    "dispositivo": ultima.dispositivo.nombre,
+                    "nivel_db": ultima.nivel_db,
+                    "presencia": ultima.presencia,
+                    "fecha": ultima.fecha_hora.strftime("%d/%m/%Y %H:%M:%S")
+                    # Si tienes rms en modelo, añade: "rms": ultima.rms
+                }
+            })
 
+        return JsonResponse({
+            "status": "ok",
+            "mensaje": "API activa, todavía sin datos"
+        })
 
 @login_required
 def ver_dispositivo(request, id):

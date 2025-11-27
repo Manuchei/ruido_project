@@ -3,11 +3,11 @@
 #include <math.h>
 
 // 🔹 CONFIGURA TU RED WiFi
-const char* ssid = "PORTATIL-DELL 1211";
-const char* password = "12345678";
+const char* ssid = "Portales";
+const char* password = "596100Aa";
 
 // 🔹 IP y puerto del servidor Django
-char serverAddress[] = "nonastronomically-unplotted-marlo.ngrok-free.dev";
+char serverAddress[] = "unblinding-optatively-altha.ngrok-free.dev";
 int port = 80;
 
 // 🔹 API Key
@@ -47,8 +47,9 @@ float medirRMS() {
 
   for (int i = 0; i < MUESTRAS; i++) {
     int valor = analogRead(pinSensor);
-    int señal = valor - 512;  // centramos en 0
-    sumaCuadrados += señal * señal;
+    int senal = valor - 512;
+    sumaCuadrados += senal * senal;
+
     delayMicroseconds(200);
   }
 
@@ -62,7 +63,7 @@ float rmsToDb(float rms) {
   if (rms < 1) rms = 1;
   float dB = 20.0 * log10(rms / referencia);
 
-  return dB + 40;   // desplazamiento para rango realista
+  return dB + 40;  // desplazamiento para rango realista
 }
 
 void loop() {
@@ -85,6 +86,7 @@ void loop() {
   String json = "{";
   json += "\"api_key\":\"" + String(API_KEY) + "\",";
   json += "\"nivel_db\":" + String(nivelDB, 2) + ",";
+  json += "\"rms\":" + String(rms, 4) + ",";   // 👈 AÑADIDO
   json += "\"presencia\":" + String(presencia);
   json += "}";
 
